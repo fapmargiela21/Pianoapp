@@ -218,6 +218,7 @@ export class PianoView {
       const step = s.steps[s.cur];
       if (step && s.mode === 'wait') for (const n of step.notes) expected.set(n.midi, n.hand);
     }
+    if (s.hints === false && s.mode !== 'listen') expected = new Map(); // read the notes yourself
 
     const keyColor = (m) => {
       const fx = s.keyFx.get(m);

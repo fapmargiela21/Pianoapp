@@ -11,7 +11,7 @@ const LS = 'pianoapp.';
 
 const DEFAULTS = {
   labels: 'solfege', sensitivity: 0.5, zoom: 1, tempo: 0.8, showHeard: true, hands: 'both',
-  view: 'sheet', practice: 'wait', metronome: false,
+  view: 'sheet', practice: 'wait', metronome: false, hints: true,
 };
 const settings = { ...DEFAULTS, ...readJSON('settings', {}) };
 function readJSON(key, def) {
@@ -180,11 +180,18 @@ function layoutView() {
   $('#status').classList.toggle('light', settings.view === 'sheet');
 }
 
+function updateViewBtn() {
+  // Shows what a tap switches to.
+  $('#viewBtn').textContent = settings.view === 'sheet' ? '▤' : '𝄞';
+  $('#viewBtn').title = settings.view === 'sheet' ? 'Показать полосы' : 'Показать ноты';
+}
+
 function setView(v) {
   settings.view = v;
   saveSettings();
   view = views[v] || views.sheet;
   document.querySelectorAll('#viewSeg button').forEach((b) => b.classList.toggle('sel', b.dataset.v === v));
+  updateViewBtn();
   layoutView();
 }
 
@@ -580,6 +587,7 @@ function frame(now) {
     noteState: P.noteState,
     expectedKeys: P.expectedKeys,
     countIn: P.countIn,
+    hints: settings.hints,
     hands: settings.hands,
     now,
     nameOf: (m) => P.names.get(m) || midiToName(m),
@@ -737,11 +745,13 @@ $('#ytClose').addEventListener('click', () => {
 function openSettings() {
   document.querySelectorAll('#labelSeg button').forEach((b) => b.classList.toggle('sel', b.dataset.v === settings.labels));
   document.querySelectorAll('#viewSeg button').forEach((b) => b.classList.toggle('sel', b.dataset.v === settings.view));
+updateViewBtn();
   $('#sensRange').value = settings.sensitivity;
   $('#zoomRange').value = settings.zoom;
   $('#tempoRange').value = settings.tempo;
   $('#tempoText').textContent = Math.round(settings.tempo * 100) + '%';
   $('#heardChk').checked = settings.showHeard;
+  $('#hintsChk').checked = settings.hints;
   $('#settingsOverlay').classList.remove('hidden');
 }
 $('#settingsBtn').addEventListener('click', openSettings);
@@ -756,6 +766,8 @@ $('#sensRange').addEventListener('input', (e) => { settings.sensitivity = +e.tar
 $('#zoomRange').addEventListener('input', (e) => { settings.zoom = +e.target.value; layoutView(); });
 $('#tempoRange').addEventListener('input', (e) => setTempo(+e.target.value));
 $('#heardChk').addEventListener('change', (e) => { settings.showHeard = e.target.checked; });
+$('#hintsChk').addEventListener('change', (e) => { settings.hints = e.target.checked; saveSettings(); });
+$('#viewBtn').addEventListener('click', () => setView(settings.view === 'sheet' ? 'fall' : 'sheet'));
 
 setTempo(settings.tempo);
 $('#metroBtn').classList.toggle('on', !!settings.metronome);
