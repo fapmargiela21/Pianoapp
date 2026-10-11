@@ -13,5 +13,9 @@ YouTube links and sheet music in chat; the usual task is to add a song.
 
 ## Code map
 - `js/pitch.js` mic note detection (harmonic salience per key, onset detection, overtone filtering).
-- `js/app.js` wait-mode game logic; `js/render.js` canvas waterfall + keyboard; `js/songs.js` parsers.
+- `js/app.js` game logic: practice modes "wait" (step until the right notes) and "play" (in tempo,
+  notes graded hit/miss); views: `js/sheet.js` grand staff (Bravura SMuFL font) and `js/render.js`
+  falling notes; both draw the keyboard. `js/songs.js` parsers. Set `key:` in songs so the staff gets
+  the right key signature.
+- Tests: `node tools/check-songs.mjs`; `tools/e2e/run.mjs` (fake-mic detection test, see header).
 - UI text is Russian.

@@ -19,6 +19,30 @@ export class Synth {
     this.wave = ctx.createPeriodicWave(real, imag);
   }
 
+  // Metronome / count-in tick: filtered noise, so the pitch detector ignores it.
+  click(accent = false) {
+    const ctx = this.ctx;
+    const t = ctx.currentTime + 0.005;
+    if (!this.noise) {
+      const len = Math.round(ctx.sampleRate * 0.04);
+      this.noise = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = this.noise.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len / 6));
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = this.noise;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = accent ? 3200 : 2200;
+    bp.Q.value = 0.8;
+    const g = ctx.createGain();
+    g.gain.value = accent ? 1.6 : 1.0;
+    src.connect(bp);
+    bp.connect(g);
+    g.connect(this.out);
+    src.start(t);
+  }
+
   play(midi, when = 0, dur = 0.5, vel = 0.8) {
     const ctx = this.ctx;
     const t = Math.max(when, ctx.currentTime);

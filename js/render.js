@@ -145,9 +145,12 @@ export class PianoView {
       const h = Math.max(6, y1 - y0 - 2);
       const top = y1 - h;
       const active = n.step >= 0;
-      const isCur = active && n.step === cur;
+      const inTempo = s.practice === 'play';
+      const isCur = active && !inTempo && n.step === cur;
+      const st = inTempo && s.noteState ? s.noteState.get(n) : null;
       let fill;
       if (!active) fill = rgba(COLORS[n.hand], 0.22);
+      else if (inTempo) fill = st === 'hit' ? COLORS.good : st === 'miss' ? rgba(COLORS.wrong, 0.75) : COLORS[n.hand];
       else if (n.step < cur) fill = rgba(COLORS.done, 0.55);
       else if (isCur && s.got.has(n.midi)) fill = COLORS.good;
       else fill = COLORS[n.hand];
@@ -166,7 +169,7 @@ export class PianoView {
         g.strokeStyle = s.wrongFlash ? COLORS.wrong : '#ffffff';
         roundRect(g, x, top, w, h, Math.min(8, w / 3));
         g.stroke();
-      } else if (active && n.step > cur) {
+      } else if (active && (inTempo ? !st : n.step > cur)) {
         g.lineWidth = 1;
         g.strokeStyle = 'rgba(255,255,255,0.35)';
         roundRect(g, x + 0.5, top + 0.5, w - 1, h - 1, Math.min(8, w / 3));
@@ -176,7 +179,7 @@ export class PianoView {
       const label = noteLabel(n.name, labelStyle);
       const fs = Math.min(15, Math.max(9, k.w * (label.length > 2 ? 0.34 : 0.45)));
       if (label && h > fs + 4 && w > 12) {
-        g.fillStyle = active ? (n.step < cur ? 'rgba(255,255,255,0.7)' : '#0b1020') : 'rgba(255,255,255,0.45)';
+        g.fillStyle = active ? ((inTempo ? st : n.step < cur) ? 'rgba(255,255,255,0.7)' : '#0b1020') : 'rgba(255,255,255,0.45)';
         g.font = `600 ${fs}px -apple-system, system-ui, sans-serif`;
         g.textAlign = 'center';
         g.textBaseline = 'bottom';
@@ -209,9 +212,12 @@ export class PianoView {
     g.fillStyle = '#05060a';
     g.fillRect(0, hitY, W, kbH);
 
-    const expected = new Map(); // midi -> hand
-    const step = s.steps[s.cur];
-    if (step && s.mode === 'wait') for (const n of step.notes) expected.set(n.midi, n.hand);
+    let expected = s.expectedKeys; // midi -> hand
+    if (!expected) {
+      expected = new Map();
+      const step = s.steps[s.cur];
+      if (step && s.mode === 'wait') for (const n of step.notes) expected.set(n.midi, n.hand);
+    }
 
     const keyColor = (m) => {
       const fx = s.keyFx.get(m);
