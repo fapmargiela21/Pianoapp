@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Пианино">
+  <meta name="theme-color" content="#0e1016">
+  <title>Пианино</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Song library -->
+  <section id="library" class="screen">
+    <header class="lib-head">
+      <h1>🎹 Мои песни</h1>
+      <div class="lib-actions">
+        <label class="btn">
+          📂 Открыть MIDI
+          <input id="midiInput" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" hidden>
+        </label>
+        <button id="libSettings" class="btn icon" aria-label="Настройки">⚙️</button>
+      </div>
+    </header>
+    <div id="songGrid" class="grid"></div>
+    <p class="hint">
+      Хочешь новую песню? Пришли в чат ссылку на YouTube и ноты (фото, PDF или MIDI) — она появится здесь.
+      Или открой MIDI-файл прямо с iPad кнопкой «Открыть MIDI».
+    </p>
+  </section>
+
+  <!-- Practice screen -->
+  <section id="player" class="screen hidden">
+    <header class="toolbar">
+      <button id="backBtn" class="btn icon" aria-label="Назад">‹</button>
+      <div class="title">
+        <div id="songTitle"></div>
+        <div id="songSub" class="sub"></div>
+      </div>
+      <div class="seg" id="handSeg">
+        <button data-hand="L">Левая</button>
+        <button data-hand="both">Обе</button>
+        <button data-hand="R">Правая</button>
+      </div>
+      <button id="listenBtn" class="btn">▶︎ Послушать</button>
+      <button id="ytBtn" class="btn hidden">YouTube</button>
+      <button id="restartBtn" class="btn icon" aria-label="Сначала">↺</button>
+      <button id="micBtn" class="btn icon" aria-label="Микрофон">🎤</button>
+      <button id="settingsBtn" class="btn icon" aria-label="Настройки">⚙️</button>
+    </header>
+    <div id="progress" class="progress"><div id="progressFill"></div></div>
+    <div class="stage">
+      <canvas id="view"></canvas>
+      <div id="status" class="status">
+        <span id="levelMeter" class="meter"><i></i></span>
+        <span id="heardText"></span>
+      </div>
+      <div id="counter" class="counter"></div>
+    </div>
+
+    <!-- Start overlay -->
+    <div id="startOverlay" class="overlay">
+      <div class="card">
+        <h2 id="startTitle"></h2>
+        <p>Включи микрофон и играй на пианино. Приложение ждёт, пока ты сыграешь правильную ноту.
+          Неверная нота подсвечивается красным.</p>
+        <button id="startMic" class="btn big primary">🎤 Включить микрофон</button>
+        <button id="startNoMic" class="btn big">Без микрофона (нажимать на экране)</button>
+        <p id="micError" class="error hidden"></p>
+      </div>
+    </div>
+
+    <!-- Finish overlay -->
+    <div id="doneOverlay" class="overlay hidden">
+      <div class="card">
+        <h2>Готово! 🎉</h2>
+        <div id="stars" class="stars"></div>
+        <p id="doneStats"></p>
+        <button id="againBtn" class="btn big primary">Ещё раз</button>
+        <button id="toLibBtn" class="btn big">К списку песен</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- YouTube -->
+  <div id="ytOverlay" class="overlay hidden">
+    <div class="card wide">
+      <div class="yt-wrap" id="ytWrap"></div>
+      <button id="ytClose" class="btn big">Закрыть</button>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div id="settingsOverlay" class="overlay hidden">
+    <div class="card">
+      <h2>Настройки</h2>
+      <div class="row">
+        <span>Названия нот</span>
+        <div class="seg" id="labelSeg">
+          <button data-v="solfege">До Ре Ми</button>
+          <button data-v="letters">C D E</button>
+          <button data-v="none">Нет</button>
+        </div>
+      </div>
+      <div class="row">
+        <span>Чувствительность микрофона</span>
+        <input id="sensRange" type="range" min="0" max="1" step="0.05">
+      </div>
+      <div class="row">
+        <span>Масштаб нот</span>
+        <input id="zoomRange" type="range" min="0.5" max="2" step="0.1">
+      </div>
+      <div class="row">
+        <span>Темп «Послушать»</span>
+        <input id="tempoRange" type="range" min="0.4" max="1.2" step="0.05">
+        <span id="tempoText" class="val"></span>
+      </div>
+      <div class="row">
+        <label><input id="heardChk" type="checkbox"> Показывать, что слышит микрофон</label>
+      </div>
+      <button id="settingsClose" class="btn big primary">Готово</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
