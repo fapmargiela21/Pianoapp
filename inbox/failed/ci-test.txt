@@ -1,0 +1,7 @@
+transcribing (a few minutes on CPU)...
+Traceback (most recent call last):
+  File "/home/runner/work/Pianoapp/Pianoapp/tools/audio2song/audio2song.py", line 34, in <module>
+    subprocess.run(['transkun', wav, mid, '--device', 'cpu'], check=True,
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['transkun', '/tmp/tmpdc457vz0/in.wav', 'songs/ci-test.mid', '--device', 'cpu']' returned non-zero exit status 1.
