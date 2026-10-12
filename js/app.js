@@ -4,7 +4,7 @@ import { Synth } from './synth.js';
 import { PianoView, COLORS } from './render.js';
 import { SheetView } from './sheet.js';
 import { songFromAudio } from './audio-import.js';
-import { transcribeLink, failureReason } from './link-import.js';
+import { transcribeLink, failureReason, songId } from './link-import.js';
 import { YtSync, videoId as ytVideoId } from './yt-player.js';
 import { buildLessons, section, starsFor, PASS } from './lessons.js';
 
@@ -173,6 +173,7 @@ async function checkPending() {
   const have = new Set(library.map((e) => e.song.id));
   const left = [];
   for (const job of readJSON('pending', [])) {
+    job.id = songId(job.id);           // older versions kept e.g. "yt-_abc" for the file yt--abc
     if (have.has(job.id)) continue;
     if (!job.error && Date.now() - job.at > 60e3) job.error = await failureReason(job);
     if (!job.error && Date.now() - job.at > 40 * 60e3) job.error = 'GitHub не ответил за 40 минут';
