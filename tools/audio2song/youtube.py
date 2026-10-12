@@ -6,7 +6,7 @@
 YouTube blocks downloads from servers, so the audio comes from the Apify actor
 johnvc/youtube-download-api (pay per audio minute; Apify's free monthly credit is plenty).
 """
-import json, os, re, sys, urllib.error, urllib.request
+import json, os, re, sys, time, urllib.error, urllib.request
 
 ACTOR = 'johnvc~youtube-download-api'
 url = sys.argv[1].strip()
@@ -18,7 +18,7 @@ sid = f'yt-{vid}'.lower()
 def fail(msg):
     # Recorded for the app (it shows inbox/failed/<id>.txt); exit 0 so the action still commits it.
     os.makedirs('inbox/failed', exist_ok=True)
-    open(f'inbox/failed/{sid}.txt', 'w', encoding='utf-8').write(msg + '\n')
+    open(f'inbox/failed/{sid}.txt', 'w', encoding='utf-8').write(f'at={int(time.time() * 1000)}\n{msg}\n')
     print('::error::' + msg)
     sys.exit(0)
 

@@ -6,7 +6,7 @@ The app uploads inbox/<id>.<ext> (audio or screen recording) and then inbox/<id>
 For each such pair: audio2song.py -> songs/<id>.song, added to songs/index.json.
 On failure the reason goes to inbox/failed/<id>.txt. The uploaded files are removed either way.
 """
-import glob, json, os, re, subprocess, sys
+import glob, json, os, re, subprocess, sys, time
 
 root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.chdir(root)
@@ -37,9 +37,10 @@ for meta_path in sorted(glob.glob('inbox/*.json')):
             json.dump(index, open('songs/index.json', 'w'), ensure_ascii=False, indent=2)
             open('songs/index.json', 'a').write('\n')
         done.append(meta.get('title') or sid)
+        if os.path.exists(f'inbox/failed/{sid}.txt'): os.remove(f'inbox/failed/{sid}.txt')
     else:
         os.makedirs('inbox/failed', exist_ok=True)
-        open(f'inbox/failed/{sid}.txt', 'w').write((r.stderr or r.stdout)[-3000:])
+        open(f'inbox/failed/{sid}.txt', 'w').write(f'at={int(time.time() * 1000)}\n' + (r.stderr or r.stdout)[-3000:])
         print(f'::error::{sid}: transcription failed', flush=True)
     for p in (audio, meta_path):
         if os.path.exists(p): os.remove(p)

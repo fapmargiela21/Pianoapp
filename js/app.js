@@ -4,6 +4,7 @@ import { Synth } from './synth.js';
 import { PianoView, COLORS } from './render.js';
 import { SheetView } from './sheet.js';
 import { songFromAudio } from './audio-import.js';
+import { transcribeLink, failureReason } from './link-import.js';
 
 const $ = (s) => document.querySelector(s);
 const LS = 'pianoapp.';
@@ -110,7 +111,77 @@ function renderLibrary() {
     }
     grid.appendChild(card);
   }
+  for (const job of readJSON('pending', [])) {
+    const card = document.createElement('div');
+    card.className = 'song-card pending';
+    card.innerHTML = '<h3></h3><div class="artist"></div>';
+    card.querySelector('h3').textContent = job.title;
+    card.querySelector('.artist').textContent = job.error
+      ? '⚠ Не получилось: ' + job.error
+      : `⏳ Распознаётся… (${Math.max(1, Math.round((Date.now() - job.at) / 60e3))} мин из ~5)`;
+    const del = document.createElement('button');
+    del.className = 'del';
+    del.textContent = '✕';
+    del.addEventListener('click', () => {
+      writeJSON('pending', readJSON('pending', []).filter((j) => j.id !== job.id));
+      renderLibrary();
+    });
+    card.appendChild(del);
+    grid.appendChild(card);
+  }
 }
+
+// ---------------------------------------------------------------- song from a YouTube link
+
+$('#linkBtn').addEventListener('click', () => {
+  $('#linkUrl').value = '';
+  $('#linkTitle').value = '';
+  $('#linkError').classList.add('hidden');
+  $('#linkTokenBox').classList.toggle('hidden', !!readJSON('ghToken', ''));
+  $('#linkOverlay').classList.remove('hidden');
+});
+$('#linkCancel').addEventListener('click', () => $('#linkOverlay').classList.add('hidden'));
+$('#linkGo').addEventListener('click', async () => {
+  const typed = $('#linkToken').value.trim();
+  const token = typed || readJSON('ghToken', '');
+  const showError = (msg) => { $('#linkError').textContent = msg; $('#linkError').classList.remove('hidden'); };
+  if (!token) { $('#linkTokenBox').classList.remove('hidden'); return showError('Вставь ключ GitHub'); }
+  $('#linkGo').disabled = true;
+  try {
+    const job = await transcribeLink($('#linkUrl').value.trim(), $('#linkTitle').value.trim(), token);
+    if (typed) { writeJSON('ghToken', typed); $('#linkToken').value = ''; }
+    writeJSON('pending', [...readJSON('pending', []).filter((j) => j.id !== job.id), job]);
+    $('#linkOverlay').classList.add('hidden');
+    renderLibrary();
+    watchPending();
+  } catch (err) {
+    if (/ключ/.test(err.message)) { writeJSON('ghToken', ''); $('#linkTokenBox').classList.remove('hidden'); }
+    showError('Не получилось: ' + err.message);
+  } finally {
+    $('#linkGo').disabled = false;
+  }
+});
+
+// Waiting songs: the library is reloaded every 30 s until each one shows up in songs/index.json.
+let pendingTimer = null;
+async function checkPending() {
+  await loadLibrary();
+  const have = new Set(library.map((e) => e.song.id));
+  const left = [];
+  for (const job of readJSON('pending', [])) {
+    if (have.has(job.id)) continue;
+    if (!job.error && Date.now() - job.at > 60e3) job.error = await failureReason(job);
+    if (!job.error && Date.now() - job.at > 40 * 60e3) job.error = 'GitHub не ответил за 40 минут';
+    left.push(job);
+  }
+  writeJSON('pending', left);
+  renderLibrary();
+  if (!left.some((j) => !j.error)) { clearInterval(pendingTimer); pendingTimer = null; }
+}
+function watchPending() {
+  if (!pendingTimer && readJSON('pending', []).some((j) => !j.error)) pendingTimer = setInterval(checkPending, 30e3);
+}
+watchPending();
 
 $('#midiInput').addEventListener('change', async (e) => {
   const file = e.target.files[0];
