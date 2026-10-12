@@ -1,0 +1,7 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchaudio
+transkun
+pretty_midi
+numpy
+audioop-lts; python_version >= "3.13"
