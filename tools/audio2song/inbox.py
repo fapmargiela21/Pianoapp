@@ -27,6 +27,10 @@ for meta_path in sorted(glob.glob('inbox/*.json')):
     mid = f'songs/{sid}.mid'
     if os.path.exists(mid): os.remove(mid)
     if r.returncode == 0 and os.path.exists(out):
+        text = open(out, encoding='utf-8').read().replace(
+            '# Распознано по звуку (Transkun) и проверено.',
+            '# Распознано автоматически (Transkun на GitHub) по загруженной записи, не проверено вручную.')
+        open(out, 'w', encoding='utf-8').write(text)
         index = json.load(open('songs/index.json'))
         if f'{sid}.song' not in index:
             index.append(f'{sid}.song')
