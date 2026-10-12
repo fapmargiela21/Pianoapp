@@ -3,6 +3,7 @@ import { NoteDetector } from './pitch.js';
 import { Synth } from './synth.js';
 import { PianoView, COLORS } from './render.js';
 import { SheetView } from './sheet.js';
+import { songFromAudio } from './audio-import.js';
 
 const $ = (s) => document.querySelector(s);
 const LS = 'pianoapp.';
@@ -89,7 +90,7 @@ function renderLibrary() {
       <h3></h3>
       <div class="artist"></div>
       <div class="meta">
-        <span class="stars">${stars}</span><span>${song.youtube ? ' · ▶︎ YouTube' : ''}${entry.source === 'imported' ? ' <span class="badge">MIDI</span>' : ''}</span>
+        <span class="stars">${stars}</span><span>${song.youtube ? ' · ▶︎ YouTube' : ''}${entry.source === 'imported' ? ` <span class="badge">${song.source === 'audio' ? 'аудио' : 'MIDI'}</span>` : ''}</span>
         <span class="best">${b != null ? Math.round(b) + '%' : ''}</span>
       </div>`;
     card.querySelector('h3').textContent = song.title;
@@ -125,6 +126,34 @@ $('#midiInput').addEventListener('change', async (e) => {
     openSong(song);
   } catch (err) {
     alert('Не получилось открыть файл: ' + err.message);
+  }
+});
+
+$('#audioInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  let cancelled = false;
+  const status = (text, frac) => {
+    $('#importStatus').textContent = text;
+    $('#importFill').style.width = Math.round(frac * 100) + '%';
+  };
+  $('#importCancel').onclick = () => { cancelled = true; status('Останавливаю…', 0); };
+  $('#importOverlay').classList.remove('hidden');
+  try {
+    const title = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+    const song = await songFromAudio(file, { title, onStatus: status, isCancelled: () => cancelled });
+    song.id = 'audio-' + Date.now();
+    const list = readJSON('imported', []);
+    list.push(song);
+    writeJSON('imported', list);
+    if (!readJSON('imported', []).some((s) => s.id === song.id)) throw new Error('не хватило места в памяти браузера — удали несколько загруженных песен');
+    $('#importOverlay').classList.add('hidden');
+    await loadLibrary();
+    openSong(song);
+  } catch (err) {
+    $('#importOverlay').classList.add('hidden');
+    if (err.message !== 'cancelled') alert('Не получилось распознать: ' + err.message);
   }
 });
 

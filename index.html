@@ -24,6 +24,10 @@
           📂 Открыть MIDI
           <input id="midiInput" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" hidden>
         </label>
+        <label class="btn">
+          🎵 Из аудио
+          <input id="audioInput" type="file" accept="audio/*,video/*,.mp3,.m4a,.wav,.aac,.ogg,.mp4,.mov" hidden>
+        </label>
         <button id="libSettings" class="btn icon" aria-label="Настройки">⚙️</button>
       </div>
     </header>
@@ -31,6 +35,8 @@
     <p class="hint">
       Хочешь новую песню? Пришли в чат ссылку на YouTube и ноты (фото, PDF или MIDI) — она появится здесь.
       Или открой MIDI-файл прямо с iPad кнопкой «Открыть MIDI».
+      Кнопка «Из аудио» сама распознаёт ноты из записи пианино (mp3, m4a, запись экрана) прямо на iPad —
+      нужна именно фортепианная версия, лучше всего видео-урок с падающими нотами.
     </p>
   </section>
 
@@ -100,6 +106,16 @@
       </div>
     </div>
   </section>
+
+  <!-- Audio import progress -->
+  <div id="importOverlay" class="overlay hidden">
+    <div class="card">
+      <h2>🎵 Из аудио</h2>
+      <p id="importStatus"></p>
+      <div class="import-bar"><div id="importFill"></div></div>
+      <button id="importCancel" class="btn big">Отмена</button>
+    </div>
+  </div>
 
   <!-- YouTube -->
   <div id="ytOverlay" class="overlay hidden">
