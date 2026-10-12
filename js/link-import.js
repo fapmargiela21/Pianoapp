@@ -10,6 +10,12 @@ export function repoFromLocation() {
   return m && repo ? `${m[1]}/${repo}` : 'fapmargiela21/Pianoapp';
 }
 
+// The file name the action gives the song (tools/audio2song/inbox.py: lower case, anything but
+// a-z 0-9 - becomes '-'), e.g. a video id with '_' in it.
+export function songId(id) {
+  return id.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'upload';
+}
+
 export function youtubeId(url) {
   const m = /(?:v=|youtu\.be\/|shorts\/|embed\/|live\/)([A-Za-z0-9_-]{11})/.exec(url) || /^([A-Za-z0-9_-]{11})$/.exec(url.trim());
   return m ? m[1] : null;
@@ -35,7 +41,7 @@ export async function transcribeLink(url, title, token) {
   const { default_branch: ref } = await gh(token, 'GET', `/repos/${repo}`);
   await gh(token, 'POST', `/repos/${repo}/actions/workflows/transcribe.yml/dispatches`,
     { ref, inputs: { url: `https://youtu.be/${vid}`, title } });
-  return { id: `yt-${vid}`.toLowerCase(), title: title || 'Песня с YouTube', url, at: Date.now() };
+  return { id: songId(`yt-${vid}`), title: title || 'Песня с YouTube', url, at: Date.now() };
 }
 
 // The action writes inbox/failed/<id>.txt when something goes wrong; it is served by the site too.

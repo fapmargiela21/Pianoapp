@@ -3,6 +3,7 @@
 name: Fetch video
 on:
   push:
+    branches-ignore: ['claude/piano-training-app-v577ce']   # the site branch: merges carry the request file
     paths: ['tools/synthesia/video-request.txt']    # "<url> [quality]" — lets a branch ask for a video
   workflow_dispatch:
     inputs:
