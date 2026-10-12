@@ -21,10 +21,16 @@ ap.add_argument('--start', type=float, default=0); ap.add_argument('--end', type
 ap.add_argument('--midi', default=''); ap.add_argument('--time', default='')
 ap.add_argument('--min-velocity', type=int, default=20)
 ap.add_argument('--dump', default='', help='write the quantized notes as JSON (for checking)')
+ap.add_argument('--notes', default='', help='notes with hands as JSON [{s, e, p, hand}] (e.g. read from a '
+                'falling-notes video, tools/synthesia/keys.py) instead of transcribing; hands are kept')
 a = ap.parse_args()
 
 # ------------------------------------------------------------------ transcription
 mid = a.midi
+GIVEN = None
+if a.notes:
+    GIVEN = sorted(json.load(open(a.notes)), key=lambda n: (n['s'], n['p']))
+    mid = 'given'
 if not mid:
     tmp = tempfile.mkdtemp()
     wav = os.path.join(tmp, 'in.wav')
@@ -33,10 +39,14 @@ if not mid:
     print('transcribing (a few minutes on CPU)...', file=sys.stderr)
     r = subprocess.run(['transkun', wav, mid, '--device', 'cpu'], capture_output=True, text=True)
     if r.returncode: sys.exit('transkun failed:\n' + (r.stderr or r.stdout)[-2000:])
-import pretty_midi
-pm = pretty_midi.PrettyMIDI(mid)
-notes = sorted([(n.start, n.end, n.pitch, n.velocity) for i in pm.instruments for n in i.notes])
-notes = [n for n in notes if a.start <= n[0] <= a.end and n[3] >= a.min_velocity]
+if GIVEN:
+    GIVEN = [n for n in GIVEN if a.start <= n['s'] <= a.end]
+    notes = [(n['s'], n['e'], n['p'], 80) for n in GIVEN]
+else:
+    import pretty_midi
+    pm = pretty_midi.PrettyMIDI(mid)
+    notes = sorted([(n.start, n.end, n.pitch, n.velocity) for i in pm.instruments for n in i.notes])
+    notes = [n for n in notes if a.start <= n[0] <= a.end and n[3] >= a.min_velocity]
 if not notes: sys.exit('no notes')
 ons = np.array([n[0] for n in notes])
 
@@ -79,6 +89,7 @@ for k in sorted(byk):
     for i in idx: HAND[i] = 'L' if notes[i][2] < cut else 'R'
     lows = [p for p in ps if p < cut]; highs = [p for p in ps if p >= cut]
     if lows and highs: split = 0.8 * split + 0.2 * (max(lows) + min(highs)) / 2
+if GIVEN: HAND = [n['hand'] for n in GIVEN]
 
 # ------------------------------------------------------------------ bars and key
 num, den = (int(x) for x in a.time.split('/')) if a.time else (None, None)

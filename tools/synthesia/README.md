@@ -13,3 +13,13 @@ YouTube video on the iPad and uploads it (YouTube itself blocks downloads from t
    the left-hand notes fall mod 16) plus the header in `tosong.py`, and run `python3 tosong.py out.song`.
 4. `audiocheck.py` checks every note against the video's audio (pitch salience rise).
 Hands come from bar colour (yellow = left, purple = right in PianoGumi videos).
+
+## Faster: lit keys + audio (howtoplaytutorial-style videos, blue = left, green = right)
+
+1. Get the video: push `tools/synthesia/video-request.txt` (`<url> 720p`) — `.github/workflows/video.yml`
+   downloads it via Apify and keeps it as a 1-day artifact (download it with the GitHub MCP
+   `download_workflow_run_artifact`). The raw Transkun MIDI of the same video is the `raw-midi`
+   artifact of the transcribe run.
+2. `python3 tools/synthesia/keys.py video.mp4 audio-notes.json notes.json` — notes and hands from the
+   colour of the lit keys; repeated strikes split by the audio onsets.
+3. `python3 tools/audio2song/audio2song.py x song.song --notes notes.json --title ... --youtube ...`
