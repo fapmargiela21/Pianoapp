@@ -1,4 +1,4 @@
-import { parseSongText, parseMidi, buildSteps, songRange, songLength, midiToName, noteLabelWithOctave } from './songs.js';
+import { parseSongText, parseMidi, buildSteps, songRange, songLength, midiToName, noteLabelWithOctave, micMidi } from './songs.js';
 import { NoteDetector } from './pitch.js';
 import { Synth } from './synth.js';
 import { PianoView, COLORS } from './render.js';
@@ -423,6 +423,7 @@ function flashWrong(midi, now) {
 function onNote(midi, source, info) {
   const now = performance.now();
   if (source !== 'mic') fx(midi, COLORS.heard, 200);
+  midi = micMidi(midi);   // a tapped key below the mic's range, as the steps expect it
   if (!P.open || P.drag) return;
   if (P.listenTail && now < P.listenTail) return;
   if (P.mode === 'play') return onNotePlay(midi, info, now);
@@ -445,7 +446,7 @@ function onNote(midi, source, info) {
   if (prev && prev.required.has(midi) && now - P.stepT < 700) return;
   // When practising one hand, the other hand's notes nearby are allowed.
   if (settings.hands !== 'both') {
-    const near = P.song.notes.some((n) => n.step < 0 && n.midi === midi && Math.abs(n.beat - step.beat) <= 2);
+    const near = P.song.notes.some((n) => n.step < 0 && micMidi(n.midi) === midi && Math.abs(n.beat - step.beat) <= 2);
     if (near) return;
   }
   // Faint mic detections are not trusted enough to count as mistakes.
@@ -522,7 +523,7 @@ function tickPlay(now) {
   for (const n of P.song.notes) {
     if (n.step < 0 || n.beat < L.beat0 - 0.01 || P.noteState.has(n)) continue;
     if (n.beat + win < beat) { P.noteState.set(n, 'miss'); continue; }
-    if (n.beat - win <= beat && n.beat - beat < 0.6) expected.add(n.midi);
+    if (n.beat - win <= beat && n.beat - beat < 0.6) expected.add(micMidi(n.midi));
     if (n.beat - beat < 0.12) keys.set(n.midi, n.hand);
   }
   detector.expected = expected;
@@ -538,19 +539,21 @@ function onNotePlay(midi, info, now) {
   const win = HIT_WINDOW * P.play.rate;
   let best = null;
   for (const n of P.song.notes) {
-    if (n.step < 0 || n.midi !== midi || P.noteState.has(n)) continue;
+    if (n.step < 0 || micMidi(n.midi) !== midi || P.noteState.has(n)) continue;
     if (Math.abs(n.beat - b) <= win && (!best || Math.abs(n.beat - b) < Math.abs(best.beat - b))) best = n;
   }
   if (best) {
-    P.noteState.set(best, 'hit');
-    P.stats.hits++;
+    // A low octave ([D1 D2]) sounds as one detected note: both keys count.
+    for (const n of P.song.notes) {
+      if (n.step >= 0 && n.beat === best.beat && micMidi(n.midi) === midi && !P.noteState.has(n)) { P.noteState.set(n, 'hit'); P.stats.hits++; }
+    }
     fx(midi, COLORS.good, 350);
     return;
   }
   if (b < P.play.beat0 - 0.2) return; // during the count-in
   // A key that was just played correctly (re-trigger, overtone) is not a mistake.
-  for (const [n, st] of P.noteState) if (st === 'hit' && n.midi === midi && Math.abs(n.beat - b) < 1.2 * win + 0.3) return;
-  if (settings.hands !== 'both' && P.song.notes.some((n) => n.step < 0 && n.midi === midi && Math.abs(n.beat - b) <= 1)) return;
+  for (const [n, st] of P.noteState) if (st === 'hit' && micMidi(n.midi) === midi && Math.abs(n.beat - b) < 1.2 * win + 0.3) return;
+  if (settings.hands !== 'both' && P.song.notes.some((n) => n.step < 0 && micMidi(n.midi) === midi && Math.abs(n.beat - b) <= 1)) return;
   if (info && info.strength < -12) return;
   flashWrong(midi, now);
 }
@@ -1031,7 +1034,7 @@ $('#nextExBtn').addEventListener('click', () => {
   if (after) startExercise(song, ...after); else openLessons(song);
 });
 
-window.__piano = { P, detector, settings, openSong: (id) => openSong(library.find((e) => e.song.id === id).song), library: () => library, setPractice, setView, startPlay, openLessons: (id) => openLessons(library.find((e) => e.song.id === id).song), finish, finishPlay };
+window.__piano = { P, detector, settings, openSong: (id) => openSong(library.find((e) => e.song.id === id).song), library: () => library, setPractice, setView, startPlay, openLessons: (id) => openLessons(library.find((e) => e.song.id === id).song), finish, finishPlay, onNote };
 
 document.fonts && document.fonts.load('40px Bravura').catch(() => {});
 loadLibrary();

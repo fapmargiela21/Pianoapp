@@ -18,6 +18,10 @@ YouTube links and sheet music in chat; the usual task is to add a song.
    README). For Synthesia-style videos `tools/synthesia/keys.py` reads notes AND hands from the lit-key
    colours (see its README; auto songs split hands by pitch, which can give one hand a >octave chord).
 
+6. A rap/trap beat (not piano): Transkun gives noise. Follow `tools/beat/README.md` — find the loop in
+   the raw transcription (`loop.py`), confirm against the loop-averaged audio (`check.py`), write the
+   melody + bass of one loop by hand (example `songs/yt--pwb1lcg12i.song`).
+
 ## Code map
 - `js/pitch.js` mic note detection (harmonic salience per key, onset detection, overtone filtering).
 - `js/audio-import.js` + `js/transcribe.js`: in-app "🎵 Из аудио" (Basic Pitch via TF.js in `js/vendor/`,
