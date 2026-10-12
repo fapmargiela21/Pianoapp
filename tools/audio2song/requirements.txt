@@ -1,7 +1,8 @@
+# Versions that transcribed the Cyberpunk song correctly (CPU-only torch).
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch
-torchaudio
-transkun
-pretty_midi
-numpy
+torch==2.14.1+cpu
+torchaudio==2.11.0+cpu
+transkun==2.0.1
+pretty_midi==0.2.11.post0
+numpy==2.5.3
 audioop-lts; python_version >= "3.13"
