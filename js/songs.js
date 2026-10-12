@@ -1,6 +1,6 @@
 // Song loading: a compact text format (.song) and standard MIDI files (.mid).
 //
-// A song is { id, title, artist, bpm, timeSig:[num, den], pickup, youtube,
+// A song is { id, title, artist, bpm, timeSig:[num, den], pickup, youtube, sync:{offset, bpm},
 //             difficulty, notes:[{ midi, beat, dur, hand:'R'|'L', name, finger }] }
 // Beats are always counted in quarter notes.
 
@@ -53,7 +53,7 @@ export function parseSongText(text, id = 'song') {
 
   const lines = text.split(/\r?\n/);
   lines.forEach((raw, lineNo) => {
-    let line = raw.replace(/\/\/.*$/, '').trim();
+    let line = raw.replace(/(^|\s)\/\/.*$/, '').trim();   // '//' comments, but not inside https://
     if (!line || line.startsWith('#')) return;
 
     const header = /^([a-zA-Z]+)\s*:\s*(.*)$/.exec(line);
@@ -69,6 +69,10 @@ export function parseSongText(text, id = 'song') {
       } else if (key === 'youtube') song.youtube = val;
       else if (key === 'difficulty') song.difficulty = parseInt(val, 10) || 1;
       else if (key === 'key') song.key = val;
+      else if (key === 'sync') {          // "<seconds of beat 0 in the YouTube audio> <exact bpm>"
+        const [off, bpm] = val.split(/\s+/).map(parseFloat);
+        if (Number.isFinite(off)) song.sync = { offset: off, bpm: Number.isFinite(bpm) ? bpm : null };
+      }
       else if (key === 'note' || key === 'comment') song.comment = val;
       return;
     }

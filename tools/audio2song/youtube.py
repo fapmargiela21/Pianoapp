@@ -48,6 +48,7 @@ os.makedirs('inbox', exist_ok=True)
 data = call(row['fileUrl'], timeout=300)
 open(f'inbox/{sid}.{ext}', 'wb').write(data)
 meta = {'id': sid, 'file': f'{sid}.{ext}', 'title': title or row.get('title') or sid,
-        'artist': row.get('channelName') or '', 'youtube': f'https://youtu.be/{vid}'}
+        'artist': row.get('channelName') or '', 'youtube': f'https://youtu.be/{vid}',
+        'synced': True}      # the audio is the video's own, so the sync: line matches the video
 json.dump(meta, open(f'inbox/{sid}.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
 print(f"{meta['title']}: {len(data) / 1e6:.1f} MB, {row.get('durationSeconds')} s")

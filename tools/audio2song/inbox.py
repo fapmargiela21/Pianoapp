@@ -30,6 +30,8 @@ for meta_path in sorted(glob.glob('inbox/*.json')):
         text = open(out, encoding='utf-8').read().replace(
             '# Распознано по звуку (Transkun) и проверено.',
             '# Распознано автоматически (Transkun на GitHub) по загруженной записи, не проверено вручную.')
+        if not meta.get('synced'):   # an uploaded recording has its own timeline, not the video's
+            text = re.sub(r'^sync:.*\n', '', text, flags=re.M)
         open(out, 'w', encoding='utf-8').write(text)
         index = json.load(open('songs/index.json'))
         if f'{sid}.song' not in index:
