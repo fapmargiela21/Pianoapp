@@ -1,0 +1,13 @@
+This YouTube video is a piano tutorial (falling-notes style, the right hand and left hand are shown in different colours). Transcribe exactly what is played in the FIRST 8 BARS (plus the pickup, if the piece starts with one) into this text format. Output only the song text, no commentary.
+
+Format:
+bpm: <tempo in quarter notes per minute>
+time: <time signature, e.g. 4/4>
+key: <key, e.g. F#, Am>
+
+[R]
+<right-hand notes>
+[L]
+<left-hand notes>
+
+Note = letter A-G, optional # or b, octave (C4 = middle C), then /duration: /1 whole, /2 half, /4 quarter, /8 eighth, /16 sixteenth, '.' dotted. Durations are sticky (apply to following notes until changed). Chord: [C4 E4 G4]/2. Rest: r/4. Tie: ~ after the note (C4/2~ C4/8). Bar line: |. Every bar must add up to the full bar length; a pickup bar may be shorter.
