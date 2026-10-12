@@ -2,6 +2,8 @@
 # hands can be read from a falling-notes tutorial frame by frame (tools/synthesia).
 name: Fetch video
 on:
+  push:
+    paths: ['tools/synthesia/video-request.txt']    # "<url> [quality]" — lets a branch ask for a video
   workflow_dispatch:
     inputs:
       url:
@@ -23,7 +25,9 @@ jobs:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
           URL: ${{ inputs.url }}
           Q: ${{ inputs.quality }}
-        run: python3 tools/synthesia/fetch_video.py "$URL" video.mp4 "$Q"
+        run: |
+          if [ -z "$URL" ]; then read -r URL Q < tools/synthesia/video-request.txt; fi
+          python3 tools/synthesia/fetch_video.py "$URL" video.mp4 "${Q:-720p}"
       - uses: actions/upload-artifact@v4
         with:
           name: video
