@@ -25,7 +25,9 @@ for meta_path in sorted(glob.glob('inbox/*.json')):
     print(r.stdout + r.stderr, flush=True)
     print('::endgroup::', flush=True)
     mid = f'songs/{sid}.mid'
-    if os.path.exists(mid): os.remove(mid)
+    if os.path.exists(mid):          # raw transcription, kept as a workflow artifact for checking
+        os.makedirs('debug', exist_ok=True)
+        os.replace(mid, f'debug/{sid}.mid')
     if r.returncode == 0 and os.path.exists(out):
         text = open(out, encoding='utf-8').read().replace(
             '# Распознано по звуку (Transkun) и проверено.',

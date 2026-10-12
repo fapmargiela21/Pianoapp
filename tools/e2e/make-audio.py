@@ -41,4 +41,11 @@ for m,times in bykey.items():
 y+=rng.normal(0,0.0015,len(y))
 y=np.clip(y,-1,1)
 w=wave.open(out,'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes((y*32767).astype(np.int16).tobytes()); w.close()
+if os.environ.get('EVENTS'):   # [{s, p, wrong}] for tools/e2e/offline-eval.mjs
+    wrong_t = set()
+    t2 = 2.0
+    for i, st in enumerate(steps):
+        if wrong_every and i > 0 and i % wrong_every == 0: wrong_t.add(round(t2, 4)); t2 += spacing
+        t2 += spacing
+    json.dump([{'s': round(t0, 4), 'p': m, 'wrong': any(abs(t0 - w) < 1e-3 for w in wrong_t)} for t0, m in events], open(os.environ['EVENTS'], 'w'))
 print(json.dumps({'events':len(events),'duration':round(total,1),'wrongs':sum(1 for i in range(1,len(steps)) if wrong_every and i%wrong_every==0)}))
