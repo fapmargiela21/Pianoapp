@@ -29,7 +29,7 @@ a = ap.parse_args()
 mid = a.midi
 GIVEN = None
 if a.notes:
-    GIVEN = sorted(json.load(open(a.notes)), key=lambda n: (n['s'], n['p']))
+    GIVEN = sorted(json.load(open(a.notes, encoding='utf-8')), key=lambda n: (n['s'], n['p']))
     mid = 'given'
 if not mid:
     tmp = tempfile.mkdtemp()
@@ -182,7 +182,7 @@ if a.youtube: head.append(f'youtube: {a.youtube}')
 # play the original audio in sync with the notes (only meaningful when the audio is the video's own).
 head.append(f'sync: {START * P + ph:.3f} {60 / P / 4:.4f}')
 head.append('# Распознано по звуку (Transkun) и проверено.')
-open(a.out, 'w').write('\n'.join(head) + '\n\n[R]\n' + '\n'.join(lines['R']) + '\n\n[L]\n' + '\n'.join(lines['L']) + '\n')
+open(a.out, 'w', encoding='utf-8').write('\n'.join(head) + '\n\n[R]\n' + '\n'.join(lines['R']) + '\n\n[L]\n' + '\n'.join(lines['L']) + '\n')
 if a.dump:
     json.dump([dict(start=s, end=e, midi=p, k=k, hand=h) for (s, e, p, v), k, h in zip(notes, K, HAND)], open(a.dump, 'w'))
 print(json.dumps({'notes': len(notes), 'bpm': round(bpm, 2), 'time': f'{num}/{den}', 'key': key,

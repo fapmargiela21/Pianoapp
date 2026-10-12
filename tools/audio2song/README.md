@@ -9,6 +9,10 @@ Setup (once per container, CPU only, ~1 GB):
     pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
     pip install transkun pretty_midi audioop-lts
 
+On Windows without MSVC, transkun's `ncls` dependency (only used for training data) fails to build:
+install everything from `requirements.txt` except transkun, plus `scipy mir-eval pydub tqdm
+torch-optimizer sox soxr moduleconf`, then `pip install --no-deps transkun==2.0.1`.
+
 Run (≈ 1 min of CPU per minute of audio):
 
     python3 tools/audio2song/audio2song.py recording.mp4 songs/<slug>.song \
