@@ -167,6 +167,9 @@ head = [f'title: {a.title or os.path.splitext(os.path.basename(a.input))[0]}']
 if a.artist: head.append(f'artist: {a.artist}')
 head += [f'bpm: {round(bpm)}', f'time: {num}/{den}', f'key: {key}', f'difficulty: {a.difficulty}']
 if a.youtube: head.append(f'youtube: {a.youtube}')
+# Where beat 0 (the first written note) is in the recording, and the exact tempo: lets the app
+# play the original audio in sync with the notes (only meaningful when the audio is the video's own).
+head.append(f'sync: {START * P + ph:.3f} {60 / P / 4:.4f}')
 head.append('# Распознано по звуку (Transkun) и проверено.')
 open(a.out, 'w').write('\n'.join(head) + '\n\n[R]\n' + '\n'.join(lines['R']) + '\n\n[L]\n' + '\n'.join(lines['L']) + '\n')
 if a.dump:

@@ -72,6 +72,7 @@
         <span id="heardText"></span>
       </div>
       <div id="counter" class="counter"></div>
+      <div id="ytMini" class="yt-mini hidden"></div>
       <div id="playCtl" class="play-ctl hidden">
         <button id="playBtn" class="play-btn" aria-label="Играть / пауза"></button>
         <div class="tempo">
@@ -159,6 +160,15 @@
           <button data-v="fall">▤ Полосы</button>
         </div>
       </div>
+      <div class="row">
+        <span>Звук «Послушать»</span>
+        <div class="seg" id="soundSeg">
+          <button data-v="synth">🎹 Синтезатор</button>
+          <button data-v="youtube">▶︎ YouTube</button>
+        </div>
+      </div>
+      <p class="setting-note">YouTube — оригинальная запись из видео, синхронно с нотами. Работает для песен,
+        добавленных «По ссылке»; для остальных играет синтезатор.</p>
       <div class="row">
         <span>Названия нот</span>
         <div class="seg" id="labelSeg">

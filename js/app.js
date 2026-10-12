@@ -5,6 +5,7 @@ import { PianoView, COLORS } from './render.js';
 import { SheetView } from './sheet.js';
 import { songFromAudio } from './audio-import.js';
 import { transcribeLink, failureReason } from './link-import.js';
+import { YtSync, videoId as ytVideoId } from './yt-player.js';
 
 const $ = (s) => document.querySelector(s);
 const LS = 'pianoapp.';
@@ -13,7 +14,7 @@ const LS = 'pianoapp.';
 
 const DEFAULTS = {
   labels: 'solfege', sensitivity: 0.5, zoom: 1, tempo: 0.8, showHeard: true, hands: 'both',
-  view: 'sheet', practice: 'wait', metronome: false, hints: true,
+  view: 'sheet', practice: 'wait', metronome: false, hints: true, sound: 'synth',
 };
 const settings = { ...DEFAULTS, ...readJSON('settings', {}) };
 function readJSON(key, def) {
@@ -308,6 +309,7 @@ function openSong(song) {
   $('#songTitle').textContent = song.title;
   $('#songSub').textContent = [song.artist, `${song.bpm} BPM`, `${song.timeSig[0]}/${song.timeSig[1]}`].filter(Boolean).join(' · ');
   $('#ytBtn').classList.toggle('hidden', !song.youtube);
+  prepareYt();
   $('#startTitle').textContent = song.title;
   layoutView();
   setHands(settings.hands);
@@ -594,12 +596,31 @@ function updateHud() {
 
 // ---------------------------------------------------------------- listen mode
 
+// "Звук: YouTube": the song's video plays instead of the synth (songs with a sync: line).
+const yt = new YtSync($('#ytMini'));
+const ytFor = (song) => (settings.sound === 'youtube' && song && song.sync && ytVideoId(song.youtube)) || null;
+function prepareYt() {
+  const vid = ytFor(P.song);
+  if (vid) yt.prepare(vid).catch((e) => console.warn(e));
+}
+const syncBps = (song) => (song.sync.bpm || song.bpm) / 60;
+
 function startListen() {
   if (!P.song) return;
   stopPlay();
   ensureAudio();
   const rate = beatsPerSec();
   const startBeat = isPlayPractice() ? P.viewBeat : P.steps[P.cur] ? P.steps[P.cur].beat : 0;
+  const vid = ytFor(P.song);
+  if (vid && yt.vid === vid && yt.play(P.song.sync.offset + startBeat / syncBps(P.song) - 0.5, settings.tempo)) {
+    const idx = P.song.notes.findIndex((n) => n.beat >= startBeat - 1e-6);
+    P.listen = { yt: true, beat0: startBeat, idx: idx < 0 ? P.song.notes.length : idx, on: [], back: P.mode };
+    P.mode = 'listen';
+    detector.paused = true;
+    $('#ytMini').classList.remove('hidden');
+    $('#listenBtn').textContent = '■ Стоп';
+    return;
+  }
   const idx = P.song.notes.findIndex((n) => n.beat >= startBeat - 1e-6);
   P.listen = { t0: audioCtx.currentTime + 0.25, beat0: startBeat - 0.25 * rate, rate, idx: idx < 0 ? P.song.notes.length : idx, on: [], back: P.mode };
   P.mode = 'listen';
@@ -609,6 +630,7 @@ function startListen() {
 
 function stopListen() {
   if (!P.listen) return;
+  if (P.listen.yt) { yt.pause(); $('#ytMini').classList.add('hidden'); }
   const back = P.listen.back;
   P.listen = null;
   if (P.mode === 'listen') P.mode = back === 'done' ? 'done' : isPlayPractice() ? 'ready' : 'wait';
@@ -619,17 +641,25 @@ function stopListen() {
 
 function tickListen() {
   const L = P.listen;
-  const t = audioCtx.currentTime;
-  const beatNow = L.beat0 + (t - L.t0) * L.rate;
-  P.viewBeat = beatNow;
   const notes = P.song.notes;
-  const ahead = beatNow + 0.3 * L.rate;
-  while (L.idx < notes.length && notes[L.idx].beat <= ahead) {
-    const n = notes[L.idx++];
-    const when = L.t0 + (n.beat - L.beat0) / L.rate;
-    synth.play(n.midi, when, n.dur / L.rate, n.hand === 'R' ? 0.85 : 0.6);
-    L.on.push(n);
+  let beatNow;
+  if (L.yt) {
+    // Follow the video: before it really starts (seek, buffering) stay at the start point.
+    beatNow = Math.max(L.beat0 - 0.5, (yt.time(performance.now()) - P.song.sync.offset) * syncBps(P.song));
+    if (!yt.playing() && beatNow < L.beat0) beatNow = L.beat0 - 0.01;
+    while (L.idx < notes.length && notes[L.idx].beat <= beatNow) L.on.push(notes[L.idx++]);
+  } else {
+    const t = audioCtx.currentTime;
+    beatNow = L.beat0 + (t - L.t0) * L.rate;
+    const ahead = beatNow + 0.3 * L.rate;
+    while (L.idx < notes.length && notes[L.idx].beat <= ahead) {
+      const n = notes[L.idx++];
+      const when = L.t0 + (n.beat - L.beat0) / L.rate;
+      synth.play(n.midi, when, n.dur / L.rate, n.hand === 'R' ? 0.85 : 0.6);
+      L.on.push(n);
+    }
   }
+  P.viewBeat = beatNow;
   P.lit = new Map();
   L.on = L.on.filter((n) => n.beat + n.dur > beatNow);
   for (const n of L.on) if (n.beat <= beatNow) P.lit.set(n.midi, n.hand);
@@ -854,6 +884,7 @@ function openSettings() {
   $('#tempoText').textContent = Math.round(settings.tempo * 100) + '%';
   $('#heardChk').checked = settings.showHeard;
   $('#hintsChk').checked = settings.hints;
+  document.querySelectorAll('#soundSeg button').forEach((b) => b.classList.toggle('sel', b.dataset.v === settings.sound));
   $('#settingsOverlay').classList.remove('hidden');
 }
 $('#settingsBtn').addEventListener('click', openSettings);
@@ -864,6 +895,13 @@ document.querySelectorAll('#labelSeg button').forEach((b) => b.addEventListener(
   document.querySelectorAll('#labelSeg button').forEach((x) => x.classList.toggle('sel', x === b));
 }));
 document.querySelectorAll('#viewSeg button').forEach((b) => b.addEventListener('click', () => setView(b.dataset.v)));
+document.querySelectorAll('#soundSeg button').forEach((b) => b.addEventListener('click', () => {
+  settings.sound = b.dataset.v;
+  saveSettings();
+  document.querySelectorAll('#soundSeg button').forEach((x) => x.classList.toggle('sel', x === b));
+  if (P.listen) stopListen();
+  if (P.song) prepareYt();
+}));
 $('#sensRange').addEventListener('input', (e) => { settings.sensitivity = +e.target.value; detector.sensitivity = settings.sensitivity; });
 $('#zoomRange').addEventListener('input', (e) => { settings.zoom = +e.target.value; layoutView(); });
 $('#tempoRange').addEventListener('input', (e) => setTempo(+e.target.value));
