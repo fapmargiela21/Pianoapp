@@ -31,8 +31,8 @@ if not mid:
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', a.input, '-ac', '2', '-ar', '44100', wav], check=True)
     mid = os.path.splitext(a.out)[0] + '.mid'
     print('transcribing (a few minutes on CPU)...', file=sys.stderr)
-    subprocess.run(['transkun', wav, mid, '--device', 'cpu'], check=True,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    r = subprocess.run(['transkun', wav, mid, '--device', 'cpu'], capture_output=True, text=True)
+    if r.returncode: sys.exit('transkun failed:\n' + (r.stderr or r.stdout)[-2000:])
 import pretty_midi
 pm = pretty_midi.PrettyMIDI(mid)
 notes = sorted([(n.start, n.end, n.pitch, n.velocity) for i in pm.instruments for n in i.notes])

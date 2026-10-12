@@ -20,17 +20,23 @@
     <header class="lib-head">
       <h1>🎹 Мои песни</h1>
       <div class="lib-actions">
+        <button id="linkBtn" class="btn primary">🔗 По ссылке</button>
         <label class="btn">
           📂 Открыть MIDI
           <input id="midiInput" type="file" accept=".mid,.midi,audio/midi,audio/x-midi" hidden>
+        </label>
+        <label class="btn">
+          🎵 Из аудио
+          <input id="audioInput" type="file" accept="audio/*,video/*,.mp3,.m4a,.wav,.aac,.ogg,.mp4,.mov" hidden>
         </label>
         <button id="libSettings" class="btn icon" aria-label="Настройки">⚙️</button>
       </div>
     </header>
     <div id="songGrid" class="grid"></div>
     <p class="hint">
-      Хочешь новую песню? Пришли в чат ссылку на YouTube и ноты (фото, PDF или MIDI) — она появится здесь.
-      Или открой MIDI-файл прямо с iPad кнопкой «Открыть MIDI».
+      Новая песня: нажми «🔗 По ссылке» и вставь ссылку на YouTube с <b>фортепианной</b> версией
+      (лучше всего урок с падающими нотами) — через ~5 минут она появится здесь.
+      «📂 Открыть MIDI» открывает MIDI-файл, «🎵 Из аудио» — быстро распознаёт запись прямо на iPad.
     </p>
   </section>
 
@@ -100,6 +106,39 @@
       </div>
     </div>
   </section>
+
+  <!-- Song from a YouTube link (transcribed on GitHub) -->
+  <div id="linkOverlay" class="overlay hidden">
+    <div class="card">
+      <h2>🔗 Песня по ссылке</h2>
+      <p>Вставь ссылку на YouTube с <b>фортепианной</b> версией (лучше всего урок с падающими нотами).
+        Ноты распознаются на GitHub — песня появится в списке минут через 5.</p>
+      <label class="field">Ссылка на YouTube
+        <input id="linkUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://youtu.be/...">
+      </label>
+      <label class="field">Название (можно не писать)
+        <input id="linkTitle" type="text" autocomplete="off">
+      </label>
+      <div id="linkTokenBox" class="hidden">
+        <label class="field">Ключ GitHub (нужен один раз, начинается с github_pat_)
+          <input id="linkToken" type="password" autocomplete="off" placeholder="github_pat_...">
+        </label>
+      </div>
+      <p id="linkError" class="error hidden"></p>
+      <button id="linkGo" class="btn big primary">Распознать</button>
+      <button id="linkCancel" class="btn big">Отмена</button>
+    </div>
+  </div>
+
+  <!-- Audio import progress -->
+  <div id="importOverlay" class="overlay hidden">
+    <div class="card">
+      <h2>🎵 Из аудио</h2>
+      <p id="importStatus"></p>
+      <div class="import-bar"><div id="importFill"></div></div>
+      <button id="importCancel" class="btn big">Отмена</button>
+    </div>
+  </div>
 
   <!-- YouTube -->
   <div id="ytOverlay" class="overlay hidden">
