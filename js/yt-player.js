@@ -31,6 +31,7 @@ export class YtSync {
     this.ready = false;
     this.last = null;          // { raw, at } — last time reported by the player
     this.est = 0;
+    this.error = null;         // YouTube error code (101/150: the author forbids embedding)
   }
 
   // Prepares the player for a video (call when a song opens, so "play" can start instantly).
@@ -38,6 +39,7 @@ export class YtSync {
     if (this.vid === vid && this.player) return;
     this.vid = vid;
     this.ready = false;
+    this.error = null;
     const YT = await loadApi();
     if (this.vid !== vid) return;
     if (this.player) { this.player.cueVideoById(vid); this.ready = true; return; }
@@ -47,7 +49,10 @@ export class YtSync {
       this.player = new YT.Player(host, {
         videoId: vid, width: '100%', height: '100%',
         playerVars: { playsinline: 1, controls: 0, disablekb: 1, rel: 0, modestbranding: 1, fs: 0 },
-        events: { onReady: () => { this.ready = true; resolve(); } },
+        events: {
+          onReady: () => { this.ready = true; resolve(); },
+          onError: (e) => { this.error = e.data; },
+        },
       });
     });
   }

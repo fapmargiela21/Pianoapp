@@ -53,7 +53,7 @@ export function parseSongText(text, id = 'song') {
 
   const lines = text.split(/\r?\n/);
   lines.forEach((raw, lineNo) => {
-    let line = raw.replace(/\/\/.*$/, '').trim();
+    let line = raw.replace(/(^|\s)\/\/.*$/, '').trim();   // '//' comments, but not inside https://
     if (!line || line.startsWith('#')) return;
 
     const header = /^([a-zA-Z]+)\s*:\s*(.*)$/.exec(line);

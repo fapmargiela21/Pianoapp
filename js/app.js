@@ -598,7 +598,11 @@ function updateHud() {
 
 // "Звук: YouTube": the song's video plays instead of the synth (songs with a sync: line).
 const yt = new YtSync($('#ytMini'));
-const ytFor = (song) => (settings.sound === 'youtube' && song && song.sync && ytVideoId(song.youtube)) || null;
+const ytBroken = new Set();     // videos YouTube refused to play here
+const ytFor = (song) => {
+  const vid = settings.sound === 'youtube' && song && song.sync && ytVideoId(song.youtube);
+  return vid && !ytBroken.has(vid) ? vid : null;
+};
 function prepareYt() {
   const vid = ytFor(P.song);
   if (vid) yt.prepare(vid).catch((e) => console.warn(e));
@@ -614,10 +618,10 @@ function startListen() {
   const vid = ytFor(P.song);
   if (vid && yt.vid === vid && yt.play(P.song.sync.offset + startBeat / syncBps(P.song) - 0.5, settings.tempo)) {
     const idx = P.song.notes.findIndex((n) => n.beat >= startBeat - 1e-6);
-    P.listen = { yt: true, beat0: startBeat, idx: idx < 0 ? P.song.notes.length : idx, on: [], back: P.mode };
+    P.listen = { yt: true, beat0: startBeat, idx: idx < 0 ? P.song.notes.length : idx, on: [], back: P.mode, started: performance.now() };
     P.mode = 'listen';
     detector.paused = true;
-    $('#ytMini').classList.remove('hidden');
+    $('#ytMini').classList.remove('off');
     $('#listenBtn').textContent = '■ Стоп';
     return;
   }
@@ -630,7 +634,7 @@ function startListen() {
 
 function stopListen() {
   if (!P.listen) return;
-  if (P.listen.yt) { yt.pause(); $('#ytMini').classList.add('hidden'); }
+  if (P.listen.yt) { yt.pause(); $('#ytMini').classList.add('off'); }
   const back = P.listen.back;
   P.listen = null;
   if (P.mode === 'listen') P.mode = back === 'done' ? 'done' : isPlayPractice() ? 'ready' : 'wait';
@@ -643,6 +647,17 @@ function tickListen() {
   const L = P.listen;
   const notes = P.song.notes;
   let beatNow;
+  if (L.yt && (yt.error != null || (!yt.playing() && performance.now() - L.started > 12000 && yt.time(performance.now()) <= P.song.sync.offset + L.beat0 / syncBps(P.song)))) {
+    // The video won't play (embedding forbidden, network...): fall back to the synth.
+    const code = yt.error;
+    ytBroken.add(yt.vid);
+    stopListen();
+    alert(code === 101 || code === 150
+      ? 'Автор этого видео запретил воспроизведение на других сайтах — играю синтезатором.'
+      : 'Видео с YouTube не запустилось — играю синтезатором.');
+    startListen();
+    return;
+  }
   if (L.yt) {
     // Follow the video: before it really starts (seek, buffering) stay at the start point.
     beatNow = Math.max(L.beat0 - 0.5, (yt.time(performance.now()) - P.song.sync.offset) * syncBps(P.song));
