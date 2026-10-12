@@ -15,7 +15,8 @@ YouTube links and sheet music in chat; the usual task is to add a song.
    workflow (workflow_dispatch, inputs url/title). Auto songs are unchecked — review them if asked.
    YouTube downloads are blocked here (bot check). Ask for an iPad screen recording or an audio
    file of a *piano* version, then `tools/audio2song/` (Transkun transcription → .song, see its
-   README). For Synthesia-style videos `tools/synthesia/` can cross-check frame by frame.
+   README). For Synthesia-style videos `tools/synthesia/keys.py` reads notes AND hands from the lit-key
+   colours (see its README; auto songs split hands by pitch, which can give one hand a >octave chord).
 
 ## Code map
 - `js/pitch.js` mic note detection (harmonic salience per key, onset detection, overtone filtering).

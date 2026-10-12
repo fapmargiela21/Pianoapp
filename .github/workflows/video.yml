@@ -1,0 +1,36 @@
+# Downloads a YouTube video (via Apify) and keeps it for a day as a workflow artifact, so notes and
+# hands can be read from a falling-notes tutorial frame by frame (tools/synthesia).
+name: Fetch video
+on:
+  push:
+    paths: ['tools/synthesia/video-request.txt']    # "<url> [quality]" — lets a branch ask for a video
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'YouTube link'
+        required: true
+      quality:
+        description: 'Max height'
+        default: '720p'
+permissions:
+  contents: read
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          URL: ${{ inputs.url }}
+          Q: ${{ inputs.quality }}
+        run: |
+          if [ -z "$URL" ]; then read -r URL Q < tools/synthesia/video-request.txt; fi
+          python3 tools/synthesia/fetch_video.py "$URL" video.mp4 "${Q:-720p}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: video
+          path: video.mp4
+          retention-days: 1
+          compression-level: 0
