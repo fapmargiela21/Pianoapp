@@ -57,6 +57,7 @@
         <button data-v="wait" title="Приложение ждёт правильную ноту">Ждать ноту</button>
         <button data-v="play" title="Ноты идут сами в выбранном темпе">В темпе</button>
       </div>
+      <button id="lessonsBtn" class="btn">📚 Уроки</button>
       <button id="listenBtn" class="btn">▶︎ Послушать</button>
       <button id="ytBtn" class="btn hidden">YouTube</button>
       <button id="restartBtn" class="btn icon" aria-label="Сначала">↺</button>
@@ -64,6 +65,10 @@
       <button id="viewBtn" class="btn icon" aria-label="Ноты или полосы" title="Ноты / полосы"></button>
       <button id="settingsBtn" class="btn icon" aria-label="Настройки">⚙️</button>
     </header>
+    <div id="lessonBar" class="lesson-bar hidden">
+      <span id="lessonText"></span>
+      <button id="lessonListBtn" class="btn">Все уроки</button>
+    </div>
     <div id="progress" class="progress"><div id="progressFill"></div></div>
     <div class="stage">
       <canvas id="view"></canvas>
@@ -99,14 +104,28 @@
     <!-- Finish overlay -->
     <div id="doneOverlay" class="overlay hidden">
       <div class="card">
-        <h2>Готово! 🎉</h2>
+        <h2 id="doneTitle">Готово! 🎉</h2>
         <div id="stars" class="stars"></div>
         <p id="doneStats"></p>
+        <button id="nextExBtn" class="btn big primary hidden">Дальше ▶</button>
         <button id="againBtn" class="btn big primary">Ещё раз</button>
         <button id="toLibBtn" class="btn big">К списку песен</button>
       </div>
     </div>
   </section>
+
+  <!-- Lessons of a song -->
+  <div id="lessonsOverlay" class="overlay hidden">
+    <div class="card wide lessons-card">
+      <h2 id="lessonsTitle"></h2>
+      <p class="lessons-hint">Песня разбита на фразы по 4 такта. Каждую учи по шагам: правая рука, левая,
+        двумя руками, потом проверка в темпе — она и ставит оценку (★★ от 80%, ★★★ от 95%).
+        Темп меняется кнопками −/+ в режиме «В темпе».</p>
+      <button id="lessonsContinue" class="btn big primary"></button>
+      <div id="lessonsList" class="lessons-list"></div>
+      <button id="lessonsClose" class="btn big">Закрыть</button>
+    </div>
+  </div>
 
   <!-- Song from a YouTube link (transcribed on GitHub) -->
   <div id="linkOverlay" class="overlay hidden">

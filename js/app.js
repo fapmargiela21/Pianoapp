@@ -6,6 +6,7 @@ import { SheetView } from './sheet.js';
 import { songFromAudio } from './audio-import.js';
 import { transcribeLink, failureReason } from './link-import.js';
 import { YtSync, videoId as ytVideoId } from './yt-player.js';
+import { buildLessons, section, starsFor, PASS } from './lessons.js';
 
 const $ = (s) => document.querySelector(s);
 const LS = 'pianoapp.';
@@ -97,6 +98,8 @@ function renderLibrary() {
       </div>`;
     card.querySelector('h3').textContent = song.title;
     card.querySelector('.artist').textContent = song.artist || '';
+    const lp = lessonProgress(song);
+    if (Object.keys(lp.prog).length) card.querySelector('.best').textContent = `📚 ${lp.done}/${lp.total}` + (b != null ? ` · ${Math.round(b)}%` : '');
     card.addEventListener('click', () => openSong(song));
     if (entry.source === 'imported') {
       const del = document.createElement('button');
@@ -299,7 +302,8 @@ function setView(v) {
   layoutView();
 }
 
-function openSong(song) {
+function openSong(song, lesson = null) {
+  P.lesson = lesson;
   P.song = song;
   P.open = true;
   P.names = new Map();
@@ -311,6 +315,8 @@ function openSong(song) {
   $('#ytBtn').classList.toggle('hidden', !song.youtube);
   prepareYt();
   $('#startTitle').textContent = song.title;
+  $('#lessonBar').classList.toggle('hidden', !lesson);
+  if (lesson) $('#lessonText').textContent = `${lesson.lesson.title} · ${lesson.lesson.sub} · ${lesson.ex.title}` + (lesson.ex.graded ? ` — нужно ${PASS}%` : '');
   layoutView();
   setHands(settings.hands);
   setPractice(settings.practice);
@@ -323,6 +329,8 @@ function closeSong() {
   stopListen();
   stopPlay();
   P.open = false;
+  P.lesson = null;
+  $('#lessonBar').classList.add('hidden');
   P.song = null;
   $('#player').classList.add('hidden');
   $('#library').classList.remove('hidden');
@@ -566,10 +574,23 @@ function finish() {
 }
 
 function showResult(acc, html, whole) {
-  const stars = acc >= 95 ? 3 : acc >= 80 ? 2 : 1;
+  const stars = P.lesson ? starsFor(acc) : acc >= 95 ? 3 : acc >= 80 ? 2 : 1;
+  $('#doneTitle').textContent = P.lesson && acc < PASS ? 'Ещё немного 💪' : 'Готово! 🎉';
   $('#stars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
   $('#doneStats').innerHTML = html;
-  if (settings.hands === 'both' && whole) {
+  $('#nextExBtn').classList.toggle('hidden', !P.lesson);
+  if (P.lesson) {
+    const prog = readJSON('lessons', {});
+    const mine = prog[P.lesson.parent.id] = prog[P.lesson.parent.id] || {};
+    if (mine[P.lesson.ex.key] == null || acc > mine[P.lesson.ex.key]) mine[P.lesson.ex.key] = Math.round(acc);
+    writeJSON('lessons', prog);
+    const passed = acc >= PASS;
+    $('#doneStats').innerHTML += `<br>${passed ? '✅ Упражнение пройдено' : `Для зачёта нужно ${PASS}% — попробуй ещё раз${P.lesson.ex.practice === 'play' ? ' (можно сбавить темп кнопкой −)' : ''}`}`;
+    $('#nextExBtn').textContent = passed ? 'Дальше ▶' : 'Всё равно дальше ▶';
+    $('#nextExBtn').classList.toggle('primary', passed);
+    $('#againBtn').classList.toggle('primary', !passed);
+  } else $('#againBtn').classList.add('primary');
+  if (settings.hands === 'both' && whole && !P.song.parent) {
     const best = readJSON('best', {});
     if (best[P.song.id] == null || acc > best[P.song.id]) best[P.song.id] = acc;
     writeJSON('best', best);
@@ -805,7 +826,9 @@ window.addEventListener('resize', layoutView);
 
 // ---------------------------------------------------------------- buttons
 
-$('#backBtn').addEventListener('click', closeSong);
+$('#backBtn').addEventListener('click', () => {
+  if (P.lesson) { const song = P.lesson.parent; closeSong(); openLessons(song); } else closeSong();
+});
 $('#restartBtn').addEventListener('click', restart);
 $('#againBtn').addEventListener('click', restart);
 $('#toLibBtn').addEventListener('click', closeSong);
@@ -930,7 +953,84 @@ $('#metroBtn').classList.toggle('on', !!settings.metronome);
 document.querySelectorAll('#viewSeg button').forEach((b) => b.classList.toggle('sel', b.dataset.v === settings.view));
 
 // Debug/testing hook (used by automated tests).
-window.__piano = { P, detector, settings, openSong: (id) => openSong(library.find((e) => e.song.id === id).song), library: () => library, setPractice, setView, startPlay };
+// ---------------------------------------------------------------- lessons
+
+const lessonCache = new Map();
+function lessonsOf(song) {
+  if (!lessonCache.has(song.id)) lessonCache.set(song.id, buildLessons(song));
+  return lessonCache.get(song.id);
+}
+function lessonProgress(song) {
+  const prog = readJSON('lessons', {})[song.id] || {};
+  const lessons = lessonsOf(song);
+  const isDone = (l) => l.exercises.every((e) => (prog[e.key] ?? -1) >= PASS);
+  return { total: lessons.length, done: lessons.filter(isDone).length, prog, lessons, isDone };
+}
+function nextExercise(song) {
+  const { lessons, prog } = lessonProgress(song);
+  for (let li = 0; li < lessons.length; li++) {
+    const ei = lessons[li].exercises.findIndex((e) => (prog[e.key] ?? -1) < PASS);
+    if (ei >= 0) return [li, ei];
+  }
+  return null;
+}
+function startExercise(song, li, ei) {
+  const lesson = lessonsOf(song)[li];
+  const ex = lesson.exercises[ei];
+  $('#lessonsOverlay').classList.add('hidden');
+  settings.hands = ex.hands;
+  settings.practice = ex.practice;
+  saveSettings();
+  openSong(section(song, ex.b0, ex.b1, lesson.title), { parent: song, li, ei, lesson, ex });
+}
+function openLessons(song) {
+  const { lessons, prog, isDone } = lessonProgress(song);
+  const next = nextExercise(song);
+  $('#lessonsTitle').textContent = `📚 ${song.title}`;
+  $('#lessonsContinue').textContent = next
+    ? `▶ ${next[0] === 0 && next[1] === 0 && !Object.keys(prog).length ? 'Начать' : 'Продолжить'}: ${lessons[next[0]].title} · ${lessons[next[0]].exercises[next[1]].title}`
+    : '🎉 Все уроки пройдены — сыграть всю песню';
+  $('#lessonsContinue').onclick = () => (next ? startExercise(song, ...next) : startExercise(song, lessons.length - 1, lessons[lessons.length - 1].exercises.length - 1));
+  const list = $('#lessonsList');
+  list.innerHTML = '';
+  lessons.forEach((l, li) => {
+    const row = document.createElement('div');
+    row.className = 'lesson' + (l.join ? ' join' : '') + (l.final ? ' final' : '');
+    row.innerHTML = '<div class="head"><b></b><span class="where"></span><span class="done"></span></div><div class="ex"></div>';
+    row.querySelector('b').textContent = l.title;
+    row.querySelector('.where').textContent = l.sub + (l.repeats > 1 ? ` · в песне ${l.repeats} раза` : '');
+    if (isDone(l)) row.querySelector('.done').textContent = '✓ пройден';
+    l.exercises.forEach((e, ei) => {
+      const b = document.createElement('button');
+      const acc = prog[e.key];
+      const st = starsFor(acc);
+      b.className = (acc != null && acc >= PASS ? 'passed' : '') + (next && next[0] === li && next[1] === ei ? ' next' : '');
+      b.innerHTML = `<span></span>${acc != null ? `<span class="st">${'★'.repeat(st) || '·'}</span>` : ''}`;
+      b.firstChild.textContent = `${ei + 1}. ${e.title}` + (acc != null ? ` ${acc}%` : '');
+      b.addEventListener('click', () => startExercise(song, li, ei));
+      row.querySelector('.ex').appendChild(b);
+    });
+    list.appendChild(row);
+  });
+  $('#lessonsOverlay').classList.remove('hidden');
+  const cur = list.querySelector('button.next');
+  if (cur) setTimeout(() => cur.scrollIntoView({ block: 'center' }), 0);
+}
+const lessonSong = () => (P.lesson ? P.lesson.parent : P.song);
+$('#lessonsBtn').addEventListener('click', () => { stopListen(); stopPlay(); openLessons(lessonSong()); });
+$('#lessonListBtn').addEventListener('click', () => { stopListen(); stopPlay(); openLessons(lessonSong()); });
+$('#lessonsClose').addEventListener('click', () => $('#lessonsOverlay').classList.add('hidden'));
+$('#nextExBtn').addEventListener('click', () => {
+  const song = P.lesson.parent;
+  const next = nextExercise(song);
+  const { li, ei } = P.lesson;
+  const lessons = lessonsOf(song);
+  // Go on in order from the current exercise (the next unfinished one if all following are done).
+  const after = ei + 1 < lessons[li].exercises.length ? [li, ei + 1] : li + 1 < lessons.length ? [li + 1, 0] : next;
+  if (after) startExercise(song, ...after); else openLessons(song);
+});
+
+window.__piano = { P, detector, settings, openSong: (id) => openSong(library.find((e) => e.song.id === id).song), library: () => library, setPractice, setView, startPlay, openLessons: (id) => openLessons(library.find((e) => e.song.id === id).song), finish, finishPlay };
 
 document.fonts && document.fonts.load('40px Bravura').catch(() => {});
 loadLibrary();
