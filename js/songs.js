@@ -267,6 +267,11 @@ export function parseMidi(buffer, id = 'midi', title = 'MIDI') {
 
 // ---------------------------------------------------------------- steps
 
+// The mic hears keys from E1 up (NoteDetector.minMidi); a lower key counts as the same note an
+// octave (or two) up, which is what its overtones sound like.
+export const MIC_LOW = 28;
+export const micMidi = (m) => { while (m < MIC_LOW) m += 12; return m; };
+
 // Groups notes that start together into steps. Only notes of the active hand(s)
 // are required; the rest are shown but never waited for.
 export function buildSteps(song, hands = 'both') {
@@ -281,7 +286,7 @@ export function buildSteps(song, hands = 'both') {
       steps.push(last);
     }
     last.notes.push(n);
-    last.required.add(n.midi);
+    last.required.add(micMidi(n.midi));
     n.step = steps.length - 1;
   }
   return steps;
