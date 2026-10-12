@@ -9,7 +9,7 @@ body = {"model": model, "messages": [{"role": "user", "content": [
 headers = {'Content-Type': 'application/json'}
 # In the cloud session the key is a "network secret": the proxy adds the Authorization header itself.
 if os.environ.get('POLZA_API_KEY'): headers['Authorization'] = 'Bearer ' + os.environ['POLZA_API_KEY']
-req = urllib.request.Request('https://polza.ai/api/v1/chat/completions', json.dumps(body).encode(), headers)
+req = urllib.request.Request(os.environ.get('POLZA_BASE', 'https://api.polza.ai/api/v1') + '/chat/completions', json.dumps(body).encode(), headers)
 t = time.time()
 try:
     r = json.load(urllib.request.urlopen(req, timeout=600))
