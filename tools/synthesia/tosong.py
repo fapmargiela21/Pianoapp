@@ -67,4 +67,4 @@ youtube: https://youtu.be/4fJy8bV07vU
 # Ноты сняты покадрово с видео PianoGumi (EASY Piano Tutorial).
 """
 body = '\n[R]\n' + '\n'.join(lines['R']) + '\n\n[L]\n' + '\n'.join(lines['L']) + '\n'
-open(sys.argv[1], 'w').write(head + body)
+open(sys.argv[1], 'w', encoding='utf-8').write(head + body)

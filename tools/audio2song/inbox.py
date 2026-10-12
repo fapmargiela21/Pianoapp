@@ -35,16 +35,16 @@ for meta_path in sorted(glob.glob('inbox/*.json')):
         if not meta.get('synced'):   # an uploaded recording has its own timeline, not the video's
             text = re.sub(r'^sync:.*\n', '', text, flags=re.M)
         open(out, 'w', encoding='utf-8').write(text)
-        index = json.load(open('songs/index.json'))
+        index = json.load(open('songs/index.json', encoding='utf-8'))
         if f'{sid}.song' not in index:
             index.append(f'{sid}.song')
-            json.dump(index, open('songs/index.json', 'w'), ensure_ascii=False, indent=2)
-            open('songs/index.json', 'a').write('\n')
+            json.dump(index, open('songs/index.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+            open('songs/index.json', 'a', encoding='utf-8').write('\n')
         done.append(meta.get('title') or sid)
         if os.path.exists(f'inbox/failed/{sid}.txt'): os.remove(f'inbox/failed/{sid}.txt')
     else:
         os.makedirs('inbox/failed', exist_ok=True)
-        open(f'inbox/failed/{sid}.txt', 'w').write(f'at={int(time.time() * 1000)}\n' + (r.stderr or r.stdout)[-3000:])
+        open(f'inbox/failed/{sid}.txt', 'w', encoding='utf-8').write(f'at={int(time.time() * 1000)}\n' + (r.stderr or r.stdout)[-3000:])
         print(f'::error::{sid}: transcription failed', flush=True)
     for p in (audio, meta_path):
         if os.path.exists(p): os.remove(p)
