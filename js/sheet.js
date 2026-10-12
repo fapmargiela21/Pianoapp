@@ -38,7 +38,7 @@ export const SHEET_COLORS = { ink: INK, grey: GREY, current: '#0e7c74', done: '#
 
 // Key signature in fifths from "G", "Am", "F# minor", "Eb major"...
 export function keyFifths(key) {
-  const m = /^\s*([A-G])([#b]?)\s*(m|min|minor|moll)?\b/i.exec(key || '');
+  const m = /^\s*([A-G])([#b]?)\s*(m|min|minor|moll)?(?![a-z])/i.exec(key || '');
   if (!m) return 0;
   const tonic = m[1].toUpperCase() + m[2];
   if (!m[3]) return FIFTHS[tonic] ?? 0;

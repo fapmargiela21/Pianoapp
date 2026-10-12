@@ -180,9 +180,12 @@ function layoutView() {
   $('#status').classList.toggle('light', settings.view === 'sheet');
 }
 
+const ICON_STAFF = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 10h18M3 14h18M3 18h18"/><ellipse cx="15" cy="16" rx="2.6" ry="2" fill="currentColor" stroke="none"/><path d="M17.4 16V5"/></svg>';
+const ICON_BARS = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><rect x="4" y="3" width="4" height="10" rx="1.5"/><rect x="10" y="7" width="4" height="8" rx="1.5"/><rect x="16" y="2" width="4" height="7" rx="1.5"/><rect x="2" y="17" width="20" height="5" rx="1"/></svg>';
+
 function updateViewBtn() {
   // Shows what a tap switches to.
-  $('#viewBtn').textContent = settings.view === 'sheet' ? '▤' : '𝄞';
+  $('#viewBtn').innerHTML = settings.view === 'sheet' ? ICON_BARS : ICON_STAFF;
   $('#viewBtn').title = settings.view === 'sheet' ? 'Показать полосы' : 'Показать ноты';
 }
 
@@ -745,7 +748,6 @@ $('#ytClose').addEventListener('click', () => {
 function openSettings() {
   document.querySelectorAll('#labelSeg button').forEach((b) => b.classList.toggle('sel', b.dataset.v === settings.labels));
   document.querySelectorAll('#viewSeg button').forEach((b) => b.classList.toggle('sel', b.dataset.v === settings.view));
-updateViewBtn();
   $('#sensRange').value = settings.sensitivity;
   $('#zoomRange').value = settings.zoom;
   $('#tempoRange').value = settings.tempo;
@@ -770,6 +772,7 @@ $('#hintsChk').addEventListener('change', (e) => { settings.hints = e.target.che
 $('#viewBtn').addEventListener('click', () => setView(settings.view === 'sheet' ? 'fall' : 'sheet'));
 
 setTempo(settings.tempo);
+updateViewBtn();
 $('#metroBtn').classList.toggle('on', !!settings.metronome);
 document.querySelectorAll('#viewSeg button').forEach((b) => b.classList.toggle('sel', b.dataset.v === settings.view));
 
