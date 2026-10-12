@@ -1,10 +1,17 @@
-# Recordings uploaded from the app ("🎵 Из аудио" → "Точно") land in inbox/;
-# this transcribes them with Transkun (tools/audio2song) and commits the new songs.
+# A YouTube link from the app (workflow_dispatch, audio fetched via Apify) or a recording
+# committed to inbox/ is transcribed with Transkun (tools/audio2song); the song is committed.
 name: Transcribe uploaded recordings
 on:
   push:
     paths: ['inbox/*.json']
   workflow_dispatch:
+    inputs:
+      url:
+        description: 'YouTube link (piano version)'
+        required: false
+      title:
+        description: 'Song title (optional, the video title otherwise)'
+        required: false
 permissions:
   contents: write
   pages: write
@@ -26,6 +33,13 @@ jobs:
         run: |
           sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
           pip install -q -r tools/audio2song/requirements.txt
+      - name: Download from YouTube
+        if: ${{ inputs.url }}
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          URL: ${{ inputs.url }}
+          TITLE: ${{ inputs.title }}
+        run: python3 tools/audio2song/youtube.py "$URL" "$TITLE"
       - name: Transcribe
         run: python3 tools/audio2song/inbox.py
       - name: Check songs
