@@ -200,6 +200,26 @@ html, body {
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
 }
 .card.wide { width: min(900px, 100%); }
+.lesson-bar { display: flex; align-items: center; gap: 12px; padding: 6px 14px; background: #e3f1ef;
+  font-size: 15px; color: var(--accent-dark); }
+.lesson-bar span { flex: 1; }
+.lesson-bar .btn { height: 32px; font-size: 14px; }
+.lessons-card { max-height: calc(100vh - 40px); display: flex; flex-direction: column; }
+.lessons-hint { font-size: 14px; margin: 0 0 6px; }
+.lessons-list { overflow-y: auto; margin: 10px 0; flex: 1; -webkit-overflow-scrolling: touch; }
+.lesson { border-top: 1px solid var(--panel2); padding: 10px 0; }
+.lesson .head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.lesson .head b { font-size: 17px; }
+.lesson .head .where { color: var(--muted); font-size: 14px; }
+.lesson .head .done { margin-left: auto; color: var(--good); font-weight: 600; }
+.lesson.join .head b, .lesson.final .head b { color: var(--accent-dark); }
+.lesson .ex { display: flex; flex-wrap: wrap; gap: 8px; }
+.lesson .ex button { height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--panel2);
+  background: var(--bg); color: var(--text); font-size: 14px; }
+.lesson .ex button.passed { background: #e2f4ea; border-color: #bfe5cf; }
+.lesson .ex button.next { background: var(--accent); color: #fff; border-color: var(--accent); }
+.lesson .ex button .st { color: #f0b429; margin-left: 4px; }
+.lesson .ex button.next .st { color: #ffe08a; }
 .setting-note { margin: -6px 0 8px; font-size: 13px; color: var(--muted); line-height: 1.4; }
 .yt-mini { position: absolute; right: 16px; top: 56px; width: 240px; height: 135px; border-radius: 10px;
   overflow: hidden; background: #000; box-shadow: 0 4px 16px rgba(0,0,0,0.25); z-index: 3; }

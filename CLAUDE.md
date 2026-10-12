@@ -25,6 +25,8 @@ YouTube links and sheet music in chat; the usual task is to add a song.
   notes graded hit/miss); views: `js/sheet.js` grand staff (Bravura SMuFL font) and `js/render.js`
   falling notes; both draw the keyboard. `js/songs.js` parsers. Set `key:` in songs so the staff gets
   the right key signature.
+- `js/lessons.js`: "📚 Уроки" — a song cut into 4-bar phrases (repeats learned once), each R → L → both →
+  graded in-tempo check, joins every two phrases, whole song last; exercises run as sub-songs (`section`).
 - Mic detection is tuned on real recordings with `tools/e2e/offline-eval.mjs` (runs pitch.js without a
   browser; pass `rec.wav notes.json` pairs, notes from Transkun). Bass keys (< E3) are detected by their
   overtone row (iPad mics barely pick up their fundamental); keep chords and synthetic cases passing.
