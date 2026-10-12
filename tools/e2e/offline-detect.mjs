@@ -80,7 +80,7 @@ export function detect(wavPath, expected = null, { fps = 60, tune } = {}) {
   d.setup();
   d.running = true;
   const log = [];
-  d.onNote = (m, info) => log.push({ t: src.pos / sr, p: m });
+  d.onNote = (m, info) => log.push({ t: src.pos / sr, p: m, strength: info.strength });
   const step = sr / fps;
   for (let f = 0; f * step < y.length; f++) {
     src.pos = Math.round(f * step);
