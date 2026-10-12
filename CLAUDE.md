@@ -10,8 +10,9 @@ YouTube links and sheet music in chat; the usual task is to add a song.
 3. Run `node tools/check-songs.mjs` — it must print no ⚠ warnings (bar lengths are validated).
 4. Prefer a beginner-friendly arrangement (simplified left hand) unless asked for the full one;
    put the YouTube link in `youtube:`. Never invent notes you are unsure of — ask for sheet music.
-5. YouTube downloads are blocked here; for Synthesia-style videos ask for an iPad screen recording
-   and use `tools/synthesia/` (reads the falling bars frame by frame, checks against the audio).
+5. YouTube downloads are blocked here (bot check). Ask for an iPad screen recording or an audio
+   file of a *piano* version, then `tools/audio2song/` (Transkun transcription → .song, see its
+   README). For Synthesia-style videos `tools/synthesia/` can cross-check frame by frame.
 
 ## Code map
 - `js/pitch.js` mic note detection (harmonic salience per key, onset detection, overtone filtering).
