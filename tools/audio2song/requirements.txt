@@ -5,4 +5,5 @@ torchaudio==2.11.0+cpu
 transkun==2.0.1
 pretty_midi==0.2.11.post0
 numpy==2.5.3
+setuptools==78.1.0   # transkun imports pkg_resources
 audioop-lts; python_version >= "3.13"
