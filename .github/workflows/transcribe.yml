@@ -42,6 +42,13 @@ jobs:
         run: python3 tools/audio2song/youtube.py "$URL" "$TITLE"
       - name: Transcribe
         run: python3 tools/audio2song/inbox.py
+      - name: Keep the raw transcription (MIDI) for checking
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-midi
+          path: debug/
+          retention-days: 7
+          if-no-files-found: ignore
       - name: Check songs
         continue-on-error: true
         run: node tools/check-songs.mjs
