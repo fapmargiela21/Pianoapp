@@ -106,6 +106,7 @@ export class NoteDetector {
     this.pkl = new Float32Array(n * BASS_HARM).fill(-200); // level of partial k of each key
     this.risen = new Uint8Array(n * BASS_HARM); // partial k of key i got clearly louder just now
     this.risenT = new Float64Array(n * BASS_HARM).fill(-1e9); // ...and when (kept for a while)
+    this.idT = new Float64Array(n).fill(-1e9); // bass keys: last time the fundamental or 2nd partial stood out
     this.floorS = new Float32Array(n).fill(NaN);
     this.floorF = new Float32Array(n).fill(NaN);
     this.armed = new Uint8Array(n).fill(1);
@@ -147,12 +148,23 @@ export class NoteDetector {
     return c;
   }
 
-  // Bass key i was struck just now: several of its partials rose together, odd ones among
-  // them (a phantom an octave below a struck key only gets that key's partials, the even ones).
-  bassStruck(i) {
+  // Bass key i was struck just now (or within the last `within` ms): several of its partials rose
+  // together, odd ones among them (a phantom an octave below a struck key only gets that key's
+  // partials, the even ones).
+  bassStruck(i, within = 0) {
     let c = 0;
-    for (let h = 1; h < BASS_HARM; h++) c += this.risen[i * BASS_HARM + h];
+    for (let h = 1; h < BASS_HARM; h++) {
+      // (a strike's partials keep rising for a while after its onset: those belong to it)
+      const rt = this.risenT[i * BASS_HARM + h];
+      c += within ? (this.now - rt < within && rt > this.lastOn[i] + 150 ? 1 : 0) : this.risen[i * BASS_HARM + h];
+    }
     return c >= 4 && this.hasOwnPartials(i, 2);
+  }
+
+  // Key i's partials are louder than those of the keys up to two semitones away.
+  localBest(i) {
+    for (let d = -2; d <= 2; d++) if (d && i + d >= 0 && i + d < this.n && this.S[i + d] > this.S[i]) return false;
+    return true;
   }
 
   // Average level (dB) of the spectrum a few bins away from a peak.
@@ -219,6 +231,7 @@ export class NoteDetector {
         lin += HARM_W[h] * Math.pow(10, pk / 20);
       }
       this.row[i] = row;
+      if (bass && Math.max(T0[i], T[i]) > 12) this.idT[i] = now;
       S[i] = Math.max(-110, 20 * Math.log10(lin + 1e-12));
       if (S[i] > smax) smax = S[i];
     }
@@ -278,7 +291,15 @@ export class NoteDetector {
     const cands = [];
     for (let i = 0; i < n; i++) {
       const midi = this.minMidi + i;
-      let ok = own[i] && T[i] > 12 && S[i] - this.floorS[i] > presence && S[i] > smax - 30;
+      // The peak of the 2nd partial must stand out and round to this key. An expected bass key may
+      // instead have shown its fundamental (or a faint 2nd partial) just now: through a tablet mic a
+      // low key such as G1 sounds mostly in partials 4..10, its fundamental dies away within ~0.1 s
+      // while those still build up, and its row of partials (below) identifies it.
+      const expBass = midi < BASS_TOP && this.expected.has(midi) && this.localBest(i);
+      // Their high partials are dense, so a neighbouring key fits much of the same row: the
+      // expected key must fit the spectrum better than the keys up to a tone away.
+      const idOk = (own[i] && T[i] > 12) || (expBass && now - this.idT[i] < 200 && this.bassStruck(i, 200));
+      let ok = idOk && S[i] - this.floorS[i] > presence && S[i] > smax - 30;
       if (ok) ok = midi >= BASS_TOP ? F[i] - this.floorF[i] > presence * 0.6
         // Bass keys sound mostly through their overtones: a real one shows a whole row of them,
         // odd ones included (a phantom an octave below a sounding key only has the even ones).
@@ -292,7 +313,7 @@ export class NoteDetector {
       if (!ok) continue;
       present.push(midi);
       if (warm || !loud) continue;
-      if (midi < BASS_TOP && !this.bassStruck(i)) continue;
+      if (midi < BASS_TOP && !this.bassStruck(i, expBass ? 200 : 0)) continue;
       // A bass key's strike shows in its overtones rising together (checked above), even when
       // a neighbouring bass key still rings and the overall level barely jumps.
       const strong = this.armed[i] && (rise > riseNeed || midi < BASS_TOP);
@@ -337,7 +358,8 @@ export class NoteDetector {
     const isRoot = (x) => !this.recent.some((o) => o.midi < x.midi && explains(o, x));
     for (const c of ready) {
       // The thump of a key or a click fades at once; a real note is still there.
-      if (!presentNow.has(c.midi)) continue;
+      // (An expected bass key's row of partials can flicker below the threshold: its loudness counts.)
+      if (!presentNow.has(c.midi) && !(c.midi < BASS_TOP && this.expected.has(c.midi) && this.localBest(c.i) && S[c.i] - this.floorS[c.i] > presence)) continue;
       const explained = this.recent.some((o) => explains(o, c));
       if (this.debugReady) this.debugReady(c.midi, explained, this.recent.filter((o) => explains(o, c)).map((o) => o.midi));
       if (explained) continue;

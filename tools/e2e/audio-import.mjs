@@ -23,7 +23,7 @@ const spb = 60 / ref.bpm;
 const want = ref.notes.filter((n) => 1 + n.beat * spb < maxSec);
 writeFileSync(join(tmp, 'n.json'), JSON.stringify(want.map((n) => ({ t: 1 + n.beat * spb, d: n.dur * spb, midi: n.midi }))));
 const wav = join(tmp, id + '.wav');
-execFileSync('python3', [join(here, 'song-audio.py'), join(tmp, 'n.json'), wav]);
+execFileSync(process.env.PYTHON || 'python3', [join(here, 'song-audio.py'), join(tmp, 'n.json'), wav]);
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined });
 const page = await browser.newPage({ viewport: { width: 1180, height: 820 } });

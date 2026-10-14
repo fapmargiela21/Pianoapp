@@ -36,7 +36,7 @@ for (const [id, hands, spacing, wrongEvery, pedal, cents] of CASES) {
   const json = join(tmp, id + '.json');
   const wav = join(tmp, `${id}-${hands}-${pedal}-${cents}.wav`);
   writeFileSync(json, JSON.stringify(steps));
-  const info = JSON.parse(execFileSync('python3', [join(here, 'make-audio.py'), json, wav, String(spacing), String(wrongEvery), pedal ? 'pedal' : ''],
+  const info = JSON.parse(execFileSync(process.env.PYTHON || 'python3', [join(here, 'make-audio.py'), json, wav, String(spacing), String(wrongEvery), pedal ? 'pedal' : ''],
     { env: { ...process.env, CENTS: String(cents) } }).toString());
 
   const browser = await chromium.launch({ executablePath: exe, args: [
