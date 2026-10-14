@@ -27,7 +27,7 @@ for (const [id, hands, spacing, wrongEvery, pedal, cents] of CASES) {
   const steps = buildSteps(song, hands).slice(0, 120).map((s) => ({ beat: s.beat, midi: [...s.required] }));
   const json = join(tmp, 'steps.json'), wav = join(tmp, 'a.wav'), ev = join(tmp, 'ev.json');
   writeFileSync(json, JSON.stringify(steps));
-  execFileSync('python3', [join(here, 'make-audio.py'), json, wav, String(spacing), String(wrongEvery), pedal ? 'pedal' : ''],
+  execFileSync(process.env.PYTHON || 'python3', [join(here, 'make-audio.py'), json, wav, String(spacing), String(wrongEvery), pedal ? 'pedal' : ''],
     { env: { ...process.env, CENTS: String(cents), EVENTS: ev } });
   const events = JSON.parse(readFileSync(ev));
   const right = events.filter((e) => !e.wrong), wrong = events.filter((e) => e.wrong);
